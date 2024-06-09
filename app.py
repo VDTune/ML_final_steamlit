@@ -23,6 +23,7 @@ import seaborn as sns
 # Thiết lập tiêu đề chính
 st.title("Ứng dụng Machine Learning")
 
+
 def display_statistics(df, target_variable, independent_variables):
     st.write("## Thống kê của biến mục tiêu")
     st.write(df[target_variable].value_counts())
@@ -30,6 +31,7 @@ def display_statistics(df, target_variable, independent_variables):
     st.write("## Thống kê của các biến độc lập")
     for col in independent_variables:
         st.write(df[col].describe())
+
 
 # Hàm tính toán và hiển thị biểu đồ tương quan giữa các thuộc tính và biến lớp
 def display_correlation(df, target_variable, independent_variables):
@@ -46,8 +48,13 @@ def display_correlation(df, target_variable, independent_variables):
     # Vẽ biểu đồ heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
-    plt.title("biểu đồ tương quan giữa các thuộc tính với biến lớp", fontsize=15, fontweight="bold")
+    plt.title(
+        "biểu đồ tương quan giữa các thuộc tính với biến lớp",
+        fontsize=15,
+        fontweight="bold",
+    )
     st.pyplot(plt.gcf())
+
 
 # Tải file lên từ thanh bên
 uploaded_file = st.sidebar.file_uploader("Chọn CSV", type="csv")
@@ -66,9 +73,15 @@ if uploaded_file is not None:
     # Chọn loại mô hình
     model_type = st.sidebar.selectbox(
         "Chọn loại mô hình",
-        ["Logistic Regression", "KNN", "Random Forest", "Decision Tree", "Linear Regression"],
+        [
+            "Logistic Regression",
+            "KNN",
+            "Random Forest",
+            "Decision Tree",
+            "Linear Regression",
+        ],
     )
-    
+
     # Chọn mô hình
     if model_type == "KNN":
         k = st.sidebar.number_input("Chọn K", 1, len(df), 5)
@@ -92,19 +105,19 @@ if uploaded_file is not None:
         df.columns,
         default=list(df.columns.drop(target_variable)),
     )
-    
+
     # Preprocess
     df.dropna(inplace=True)
     df.reset_index(inplace=True, drop=True)
     X = df[independent_variables].copy()
-    
+
     # Mã hóa các biến phân loại
     le = LabelEncoder()
     for col in X.columns:
         if X[col].dtype == "object":
             X[col] = le.fit_transform(X[col])
-            
-    # Chọn dữ liệu 
+
+    # Chọn dữ liệu
     input = []
     for col in X.columns:
         name = col
@@ -112,7 +125,7 @@ if uploaded_file is not None:
             name = f"{col} {df[col].unique().tolist()}"
         val = st.number_input(name, float(X[col].min()), float(X[col].max()))
         input.append(val)
-        
+
     # Nút để bắt đầu huấn luyện mô hình
     if st.sidebar.button("Huấn luyện mô hình"):
         if not independent_variables:
@@ -137,17 +150,22 @@ if uploaded_file is not None:
             # Huấn luyện mô hình
             model.fit(X_train, Y_train)
             Y_pred = model.predict(X_test)
-            
+
             # Tính toán các chỉ số đánh giá mô hình
-            if model_type in ["Logistic Regression", "KNN", "Random Forest", "Decision Tree"]:
+            if model_type in [
+                "Logistic Regression",
+                "KNN",
+                "Random Forest",
+                "Decision Tree",
+            ]:
                 st.subheader("Result")
                 st.write(f"{target_variable}: {Y_pred[0]}")
-                
+
                 accuracy = accuracy_score(Y_test, Y_pred)
                 precision = precision_score(Y_test, Y_pred, average="weighted")
                 recall = recall_score(Y_test, Y_pred, average="weighted")
                 f1 = f1_score(Y_test, Y_pred, average="weighted")
-                
+
                 # Hiển thị các chỉ số đánh giá mô hình
                 st.write("## Đánh giá Mô hình")
                 st.write(f"Độ chính xác: {accuracy:.2f}")
@@ -164,7 +182,7 @@ if uploaded_file is not None:
                 plt.ylabel("Nhãn thực")
                 plt.title("Ma trận nhầm lẫn")
                 st.pyplot(plt.gcf())
-                
+
                 # Hiển thị biểu đồ tương quan
                 st.write("## biểu đồ tương quan giữa các thuộc tính với biến lớp")
                 display_correlation(df, target_variable, independent_variables)
@@ -183,7 +201,7 @@ if uploaded_file is not None:
                     plt.ylabel("Số lượng")
                     plt.title(f"Phân phối của {col}")
                     st.pyplot(plt.gcf())
-                    
+
                 # Hiển thị biểu đồ tương quan
                 st.write("## biểu đồ tương quan giữa các thuộc tính với biến lớp")
                 display_correlation(df, target_variable, independent_variables)
@@ -194,18 +212,24 @@ if uploaded_file is not None:
                 mae = mean_absolute_error(Y_test, Y_pred)
                 mse = mean_squared_error(Y_test, Y_pred)
                 r2 = r2_score(Y_test, Y_pred)
-                
+
                 # Hiển thị các chỉ số đánh giá mô hình
                 st.write("## Đánh giá Mô hình")
                 st.write(f"Mean Absolute Error: {mae:.2f}")
                 st.write(f"Mean Squared Error: {mse:.2f}")
                 st.write(f"R² Score: {r2:.2f}")
-                
+
                 # Plotting the results
                 if len(independent_variables) == 1:
                     plt.figure(figsize=(10, 6))
                     plt.scatter(X_test[:, 0], Y_test, color="black", label="Data")
-                    plt.plot(X_test[:, 0], Y_pred, color="blue", linewidth=3, label="Regression line")
+                    plt.plot(
+                        X_test[:, 0],
+                        Y_pred,
+                        color="blue",
+                        linewidth=3,
+                        label="Regression line",
+                    )
                     plt.xlabel(independent_variables[0])
                     plt.ylabel(target_variable)
                     plt.title("Linear Regression")
@@ -214,7 +238,9 @@ if uploaded_file is not None:
                 elif len(independent_variables) == 2:
                     fig = plt.figure(figsize=(10, 6))
                     ax = fig.add_subplot(111, projection="3d")
-                    ax.scatter(X_test[:, 0], X_test[:, 1], Y_test, color="black", label="Data")
+                    ax.scatter(
+                        X_test[:, 0], X_test[:, 1], Y_test, color="black", label="Data"
+                    )
                     ax.set_xlabel(independent_variables[0])
                     ax.set_ylabel(independent_variables[1])
                     ax.set_zlabel(target_variable)
