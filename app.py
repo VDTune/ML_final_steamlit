@@ -65,7 +65,7 @@ if uploaded_file is not None:
 
     # Hiển thị thông tin dataset
     st.write("## Thông tin Dataset")
-    st.write(df.head())
+    st.write(df)
     st.write(f"Số dòng: {df.shape[0]}")
     st.write(f"Số cột: {df.shape[1]}")
     st.write(f"Các cột: {df.columns.tolist()}")
@@ -121,8 +121,7 @@ if uploaded_file is not None:
     input = []
     for col in X.columns:
         name = col
-        if df[col].dtype == "object":
-            name = f"{col} {df[col].unique().tolist()}"
+        
         val = st.number_input(name, float(X[col].min()), float(X[col].max()))
         input.append(val)
 
@@ -131,7 +130,7 @@ if uploaded_file is not None:
         if not independent_variables:
             st.error("Vui lòng chọn ít nhất một biến độc lập.")
         else:
-            X = df[independent_variables].copy()
+            # X = df[independent_variables].copy()
             Y = df[target_variable].copy()
 
             # Điền giá trị NaN bằng giá trị trung bình của cột
