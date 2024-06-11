@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
@@ -133,6 +133,7 @@ if uploaded_file is not None:
 
     target_variable = st.sidebar.selectbox("Chọn biến mục tiêu", df.columns, index=len(df.columns) - 1)
     independent_variables = st.sidebar.multiselect("Chọn biến độc lập", df.columns, default=list(df.columns.drop(target_variable)))
+    
     # Tạo giao diện người dùng để nhập dữ liệu dự đoán
     st.write("## Dự đoán từ dữ liệu mới")
     input_data = {}
@@ -213,7 +214,7 @@ if uploaded_file is not None:
                         plt.title(f"Phân phối của {col}")
                         st.pyplot(plt.gcf())
 
-                elif model_type == "Linear Regression":
+                if model_type == "Linear Regression":
                     mae = mean_absolute_error(Y_test, Y_pred)
                     mse = mean_squared_error(Y_test, Y_pred)
                     r2 = r2_score(Y_test, Y_pred)
@@ -245,8 +246,51 @@ if uploaded_file is not None:
                         st.pyplot(fig)
                     else:
                         st.write("Không thể vẽ đồ thị với hơn 2 biến độc lập.")
+                
+                # Draw tree
+                if model_type == "Decision Tree":
+                    st.subheader("Decision Tree Visualization")
+                    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 12))
+                    plot_tree(
+                        model,
+                        ax=ax,
+                        feature_names=independent_variables,
+                        filled=True,
+                        impurity=False,
+                        precision=2,
+                        rounded=True,
+                        fontsize=12,
+                    )
+                    st.pyplot(fig)
+                    tree_text = export_text(
+                        model, feature_names=independent_variables, decimals=3, show_weights=True
+                    )
+                    st.text(tree_text)
+                    
+                if model_type == "Random Forest":
+                    st.subheader("Random Forest Tree Visualization")
+                    # Draw a any tree from random forest
+                    tree_index = st.sidebar.number_input(
+                        "Select Tree Index", 0, len(model.estimators_) - 1, step=1
+                    )
+                    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 12))
+                    plot_tree(
+                        model.estimators_[tree_index],
+                        ax=ax,
+                        feature_names=independent_variables,
+                        filled=True,
+                    )
+                    st.pyplot(fig)
+                    tree_text = export_text(
+                        model.estimators_[tree_index], feature_names=independent_variables
+                    )
+                    st.text(tree_text)
+                
             except Exception as e:
                 st.error(f"Đã xảy ra lỗi: {e}")
+
+
+
 
     st.sidebar.subheader("Gợi ý theo đánh giá")
     # item_index = st.sidebar.number_input("Chọn chỉ số mục tiêu (index)", min_value=0, max_value=len(df)-1, value=0)
