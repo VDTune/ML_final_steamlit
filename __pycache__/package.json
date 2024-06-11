@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "ml-regression-multivariate-linear": "^2.0.4"
+  }
+}
