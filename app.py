@@ -7,6 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 # Thiết lập tiêu đề chính
 st.title("Ứng dụng Machine Learning")
@@ -100,6 +102,19 @@ def recommend(user_id, df, user_col, song_col, rating_col, n_recommendations, df
         title = df_movies.loc[df_movies[song_col] == song_id, 'title'].values[0]
         recommendations.append(title)
     
+    return recommendations
+
+def keyword_recommendation(df, keyword_col, num_recommendations):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(df[keyword_col].astype(str))
+
+    # Tính toán độ tương đồng cosine
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    
+    # Lấy các mục có độ tương đồng cao nhất
+    top_indices = cosine_sim[-1].argsort()[:-num_recommendations-1:-1]
+    recommendations = df.iloc[top_indices][keyword_col].tolist()
+
     return recommendations
 
 
@@ -267,17 +282,16 @@ if uploaded_file is not None:
             st.write(recommendations)
         except Exception as e:
             st.error(f"Đã xảy ra lỗi khi gợi ý: {e}")
-    st.sidebar.subheader("Gợi ý theo từ khóa tương tự")
-    
 
     st.sidebar.subheader("Gợi ý theo từ khóa tương tự")
-    keyword_col = st.sidebar.selectbox("Chọn cột chứa từ khóa", df.columns)
-    keyword = st.sidebar.text_input("Nhập từ khóa")
     
-    if st.sidebar.button("Gợi ý theo từ khóa"):
+    keyword_col = st.sidebar.selectbox("Chọn cột từ khóa", df.columns, key="keyword_column_selectbox")
+    num_recommendations = st.sidebar.slider("Số lượng gợi ý", 1, 10, 5, key="num_recommendations_slider")
+
+    if st.sidebar.button("Gợi ý theo từ khóa", key="keyword_recommendation_button"):
         try:
-            recommendations = keyword_recommendation(df, keyword_col, keyword, num_recommendations)
-            st.write("## Kết quả gợi ý")
+            recommendations = keyword_recommendation(df, keyword_col, num_recommendations)
+            st.write(f"Kết quả gợi ý theo từ khóa '{keyword_col}':")
             st.write(recommendations)
         except Exception as e:
             st.error(f"Đã xảy ra lỗi khi gợi ý: {e}")
