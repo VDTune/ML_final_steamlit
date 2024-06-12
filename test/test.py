@@ -21,10 +21,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 # Thiết lập tiêu đề chính
 st.title("Ứng dụng Machine Learning")
 
+# Hàm hiển thị dữ liệu
 def display_statistics(df, target_variable, independent_variables):
     st.write("## Thống kê của biến mục tiêu")
     st.write(df[target_variable].value_counts())
@@ -33,6 +35,7 @@ def display_statistics(df, target_variable, independent_variables):
     for col in independent_variables:
         st.write(df[col].describe())
 
+# Hàm hiển thị biểu đồ tương quan
 def display_correlation(df):
     numeric_columns = df.select_dtypes(include=["float64", "int64"]).columns
     data = df[numeric_columns].copy()
@@ -43,6 +46,7 @@ def display_correlation(df):
     plt.title("Biểu đồ tương quan giữa các thuộc tính với biến lớp", fontsize=15, fontweight="bold")
     st.pyplot(plt.gcf())
 
+# Hàm tiền xử lí dữ liệu
 def preprocess_data(df, target_variable, independent_variables):
     df = df.dropna().reset_index(drop=True)
     X = df[independent_variables].copy()
@@ -58,14 +62,14 @@ def preprocess_data(df, target_variable, independent_variables):
     
     return train_test_split(X, Y, test_size=0.2, random_state=42)
 
+# Hàm chia tỉ lệ dữ liệu
 def scale_data(X_train, X_test):
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
     return X_train, X_test
 
-from sklearn.neighbors import NearestNeighbors
-
+# Hàm recommendation
 def recommend(user_id, df, user_col, song_col, rating_col, n_recommendations, df_movies):
     # Tạo ma trận tiện ích
     utility_matrix = df.pivot_table(index=user_col, columns=song_col, values=rating_col)
@@ -100,6 +104,19 @@ def recommend(user_id, df, user_col, song_col, rating_col, n_recommendations, df
         title = df_movies.loc[df_movies[song_col] == song_id, 'title'].values[0]
         recommendations.append(title)
     
+    return recommendations
+
+def keyword_recommendation(df, keyword_col, num_recommendations):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(df[keyword_col].astype(str))
+
+    # Tính toán độ tương đồng cosine
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    
+    # Lấy các mục có độ tương đồng cao nhất
+    top_indices = cosine_sim[-1].argsort()[:-num_recommendations-1:-1]
+    recommendations = df.iloc[top_indices][keyword_col].tolist()
+
     return recommendations
 
 
@@ -247,7 +264,7 @@ if uploaded_file is not None:
                     else:
                         st.write("Không thể vẽ đồ thị với hơn 2 biến độc lập.")
                 
-                # Draw tree
+                # Draw Decision Tree Visualization
                 if model_type == "Decision Tree":
                     st.subheader("Decision Tree Visualization")
                     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 12))
@@ -267,6 +284,7 @@ if uploaded_file is not None:
                     )
                     st.text(tree_text)
                     
+                # Draw Random Forest Visualization
                 if model_type == "Random Forest":
                     st.subheader("Random Forest Tree Visualization")
                     # Draw a any tree from random forest
@@ -311,6 +329,16 @@ if uploaded_file is not None:
             st.write(recommendations)
         except Exception as e:
             st.error(f"Đã xảy ra lỗi khi gợi ý: {e}")
+
     st.sidebar.subheader("Gợi ý theo từ khóa tương tự")
     
-    # if st.sidebar.button("Gợi ý theo từ khóa"):
+    keyword_col = st.sidebar.selectbox("Chọn cột từ khóa", df.columns, key="keyword_column_selectbox")
+    num_recommendations = st.sidebar.slider("Số lượng gợi ý", 1, 10, 5, key="num_recommendations_slider")
+
+    if st.sidebar.button("Gợi ý theo từ khóa", key="keyword_recommendation_button"):
+        try:
+            recommendations = keyword_recommendation(df, keyword_col, num_recommendations)
+            st.write(f"Kết quả gợi ý theo từ khóa '{keyword_col}':")
+            st.write(recommendations)
+        except Exception as e:
+            st.error(f"Đã xảy ra lỗi khi gợi ý: {e}")
